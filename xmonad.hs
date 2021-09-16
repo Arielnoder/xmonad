@@ -1,4 +1,3 @@
- 
 --
 -- xmonad example config file.
 --
@@ -7,14 +6,22 @@
 --
 -- Normally, you'd only override those defaults you care about.
 --
-
+import Data.Maybe
+import XMonad.Actions.SpawnOn
+import XMonad.Layout.Fullscreen
 import XMonad
+import XMonad.Hooks.WorkspaceHistory
+import XMonad.Hooks.DynamicLog
 import Data.Monoid
 import System.Exit
+import XMonad.Layout.Spacing
+import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
-
+import XMonad.Hooks.ManageDocks
+import XMonad.Layout.ToggleLayouts
+import XMonad.Layout.LayoutModifier
 -- The preferred terminal program, which is used in a binding below and by
 -- certain contrib modules.
 --
@@ -48,12 +55,13 @@ myModMask       = mod1Mask
 --
 -- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
 --
-myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
+
 
 -- Border colors for unfocused and focused windows, respectively.
 --
-myNormalBorderColor  = "#dddddd"
-myFocusedBorderColor = "#ff0000"
+myNormalBorderColor  = "#CBC3E3"
+myFocusedBorderColor = "#CBC3E3"
+myWorkspaces = [" 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 ", " 7 ", " 8 ", " 9 "]
 
 ------------------------------------------------------------------------
 -- Key bindings. Add, modify or remove key bindings here.
@@ -101,7 +109,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- Swap the focused window with the previous window
     , ((modm .|. shiftMask, xK_k     ), windows W.swapUp    )
-
+    , ((modm .|. shiftMask, xK_f     ), spawn "firefox")
     -- Shrink the master area
     , ((modm,               xK_h     ), sendMessage Shrink)
 
@@ -182,7 +190,7 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 -- The available layouts.  Note that each layout is separated by |||,
 -- which denotes layout choice.
 --
-myLayout = tiled ||| Mirror tiled ||| Full
+myLayout =  avoidStruts (tiled ||| Mirror tiled ||| Full)
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
@@ -195,6 +203,11 @@ myLayout = tiled ||| Mirror tiled ||| Full
 
      -- Percent of screen to increment by when resizing panes
      delta   = 3/100
+           
+           
+     
+
+     
 
 ------------------------------------------------------------------------
 -- Window rules:
@@ -246,17 +259,25 @@ myLogHook = return ()
 -- By default, do nothing.
 myStartupHook = do 
                spawnOnce "nitrogen --restore"
-               spawnOnce "picom &"
-               spawnOnce "xmobar ~/.xmobarrc &"
-               spawnOnce "xrandr --output DisplayPort-1 --mode 2560x1440 --rate 164 &"
-               spawnOnce "lxappearance &"
+               spawnOnce "picom --experimental-backend &"
+               spawnOnce "xrandr --output DP-2 --mode 2560x1440 --rate 164 &"
+               spawnOn "2:code" "lxappearance"
+               spawnOnce "alsamixer &"
+               spawnOnce "xmobar &"
+               spawnOnce "lxsession & "
+               spawnOnce "setxkbmap -layout us,il -option grp:shift_caps_toggle & "               
 ------------------------------------------------------------------------
 -- Now run xmonad with all the defaults we set up.
 
 -- Run xmonad with the settings you specify. No need to modify this.
 --
-main = xmonad defaults
-
+main = do
+  xmonad $ docks defaults 
+  
+  
+  
+  
+   
 -- A structure containing your configuration settings, overriding
 -- fields in the default config. Any you don't override, will
 -- use the defaults defined in xmonad/XMonad/Config.hs
@@ -279,8 +300,12 @@ defaults = def {
         mouseBindings      = myMouseBindings,
 
       -- hooks, layouts
-        layoutHook         = myLayout,
-        manageHook         = myManageHook,
+      layoutHook = spacingRaw True (Border 0 10 10 10 ) True (Border 10 10 10 10) True $
+             myLayout
+             
+            
+          
+        ,manageHook         = myManageHook,
         handleEventHook    = myEventHook,
         logHook            = myLogHook,
         startupHook        = myStartupHook
@@ -336,4 +361,10 @@ help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     "mod-button1  Set the window to floating mode and move by dragging",
     "mod-button2  Raise the window to the top of the stack",
     "mod-button3  Set the window to floating mode and resize by dragging"]
+
+
+
+
+
+
 
