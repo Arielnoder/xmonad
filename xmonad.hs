@@ -1,3 +1,4 @@
+
 --
 -- xmonad example config file.
 --
@@ -39,6 +40,7 @@ myClickJustFocuses = False
 --
 myBorderWidth   = 1
 
+
 -- modMask lets you specify which modkey you want to use. The default
 -- is mod1Mask ("left alt").  You may also consider using mod3Mask
 -- ("right alt"), which does not conflict with emacs keybindings. The
@@ -61,8 +63,17 @@ myModMask       = mod1Mask
 --
 myNormalBorderColor  = "#CBC3E3"
 myFocusedBorderColor = "#CBC3E3"
-myWorkspaces = [" 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 ", " 7 ", " 8 ", " 9 "]
+xmobarEscape = concatMap doubleLts
+  where doubleLts '<' = "<<"
+        doubleLts x   = [x]
 
+myWorkspaces :: [String]        
+myWorkspaces = clickable . (map xmobarEscape) $ [" 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 ", " 7 ", " 8 ", " 9 "]
+
+    where                                                                       
+         clickable l = [ "<action=xdotool key alt+" ++ show (n) ++ ">" ++ ws ++ "</action>" |
+                             (i,ws) <- zip [1..9] l,                                        
+                            let n = i ]
 ------------------------------------------------------------------------
 -- Key bindings. Add, modify or remove key bindings here.
 --
@@ -247,7 +258,7 @@ myEventHook = mempty
 -- Perform an arbitrary action on each internal state change or X event.
 -- See the 'XMonad.Hooks.DynamicLog' extension for examples.
 --
-myLogHook = return ()
+
 
 ------------------------------------------------------------------------
 -- Startup hook
@@ -261,7 +272,7 @@ myStartupHook = do
                spawnOnce "nitrogen --restore"
                spawnOnce "picom --experimental-backend &"
                spawnOnce "xrandr --output DP-2 --mode 2560x1440 --rate 164 &"
-               spawnOn "2:code" "lxappearance"
+               spawnOnce "lxappearance &"
                spawnOnce "alsamixer &"
                spawnOnce "xmobar &"
                spawnOnce "lxsession & "
@@ -271,9 +282,10 @@ myStartupHook = do
 
 -- Run xmonad with the settings you specify. No need to modify this.
 --
-main = do
-  xmonad $ docks defaults 
-  
+main = do 
+        xmproc <- spawnPipe "xmobar /home/ariel/.xmobarrc"
+        xmonad $ docks $ defaults xmproc
+    
   
   
   
@@ -284,7 +296,7 @@ main = do
 --
 -- No need to modify this.
 --
-defaults = def {
+defaults xmproc = def {
       -- simple stuff
         terminal           = myTerminal,
         focusFollowsMouse  = myFocusFollowsMouse,
@@ -307,8 +319,16 @@ defaults = def {
           
         ,manageHook         = myManageHook,
         handleEventHook    = myEventHook,
-        logHook            = myLogHook,
-        startupHook        = myStartupHook
+        logHook            = dynamicLogWithPP xmobarPP
+                                 { ppOutput = hPutStrLn xmproc
+                                 , ppCurrent = xmobarColor "#FFFFFF" "" . wrap "[""]" 
+                                 , ppHiddenNoWindows = xmobarColor "#CBC3E3" ""
+                                 , ppHidden = xmobarColor "#A020F0" ""                               
+                                 ,  ppVisible = wrap "(" ")"
+                                 ,  ppUrgent  = xmobarColor "#CBC3E3" "#CBC3E3"
+                                 ,  ppOrder  = \(ws:ex) -> [ws]
+                                 }
+       , startupHook        = myStartupHook
     }
 
 -- | Finally, a copy of the default bindings in simple textual tabular format.
@@ -361,9 +381,6 @@ help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     "mod-button1  Set the window to floating mode and move by dragging",
     "mod-button2  Raise the window to the top of the stack",
     "mod-button3  Set the window to floating mode and resize by dragging"]
-
-
-
 
 
 
