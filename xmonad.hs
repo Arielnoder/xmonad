@@ -7,6 +7,7 @@
 --
 -- Normally, you'd only override those defaults you care about.
 --
+import XMonad.Hooks.InsertPosition
 import Data.Maybe
 import XMonad.Actions.SpawnOn
 import XMonad.Layout.Fullscreen
@@ -62,7 +63,7 @@ myModMask       = mod1Mask
 -- Border colors for unfocused and focused windows, respectively.
 --
 myNormalBorderColor  = "#CBC3E3"
-myFocusedBorderColor = "#CBC3E3"
+myFocusedBorderColor = "#FFFFFF"
 xmobarEscape = concatMap doubleLts
   where doubleLts '<' = "<<"
         doubleLts x   = [x]
@@ -83,7 +84,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     [ ((modm .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
 
     -- launch dmenu
-    , ((modm,               xK_p     ), spawn "dmenu_run")
+    , ((modm,               xK_p     ), spawn "env LC_ALL=en_US.UTF-8 dmenu_run")
 
     -- launch gmrun
     , ((modm .|. shiftMask, xK_p     ), spawn "gmrun")
@@ -237,7 +238,8 @@ myLayout =  avoidStruts (tiled ||| Mirror tiled ||| Full)
 --
 myManageHook = composeAll
     [ className =? "MPlayer"        --> doFloat
-    , className =? "Gimp"           --> doFloat
+    , className =? "Lxappearance"   --> doShift ( myWorkspaces !! 10)
+ 
     , resource  =? "desktop_window" --> doIgnore
     , resource  =? "kdesktop"       --> doIgnore ]
 
@@ -269,12 +271,13 @@ myEventHook = mempty
 --
 -- By default, do nothing.
 myStartupHook = do 
-               spawnOnce "nitrogen --restore"
+               spawnOnce "nitrogen --set-zoom-fill /usr/share/backgrounds/arcolinux/blue-earth-2880x1800.jpg &"
                spawnOnce "picom --experimental-backend &"
-               spawnOnce "xrandr --output DP-2 --mode 2560x1440 --rate 164 &"
+               spawnOnce "xrandr --output DisplayPort-1  --mode 2560x1440 --rate 164 &"
                spawnOnce "lxappearance &"
+
                spawnOnce "alsamixer &"
-               spawnOnce "xmobar &"
+     
                spawnOnce "lxsession & "
                spawnOnce "setxkbmap -layout us,il -option grp:shift_caps_toggle & "               
 ------------------------------------------------------------------------
@@ -317,7 +320,7 @@ defaults xmproc = def {
              
             
           
-        ,manageHook         = myManageHook,
+        ,manageHook         = myManageHook <+>  insertPosition Below Newer ,
         handleEventHook    = myEventHook,
         logHook            = dynamicLogWithPP xmobarPP
                                  { ppOutput = hPutStrLn xmproc
